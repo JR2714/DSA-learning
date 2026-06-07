@@ -1,0 +1,9 @@
+# 编译产物
+*.out
+*.exe
+*.o
+test
+memory_error_test
+
+# IDE
+.vscode/
