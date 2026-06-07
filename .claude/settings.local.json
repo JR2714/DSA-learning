@@ -10,7 +10,9 @@
       "Bash(curl -sL \"https://api.github.com/repos/ubuntu/WSL/releases/latest\")",
       "Bash(curl -sL \"https://api.github.com/repos/ubuntu/WSL/releases?per_page=3\")",
       "Bash(g++ -std=c++17 -Wall -Wextra -fsanitize=address -g -o C++_Basic/dynamic_memory C++_Basic/dynamic_memory.cpp)",
-      "Bash(./C++_Basic/dynamic_memory)"
+      "Bash(./C++_Basic/dynamic_memory)",
+      "Bash(g++ -std=c++17 -Wall -Wextra -fsanitize=address -g class_objects.cpp -o class_objects)",
+      "Bash(./class_objects *)"
     ]
   }
 }
