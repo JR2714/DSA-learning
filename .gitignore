@@ -2,8 +2,7 @@
 *.out
 *.exe
 *.o
-test
-memory_error_test
+bin/
 
 # IDE
 .vscode/

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <utility>
 using std::cout;
 using std::endl;
  
@@ -13,9 +14,12 @@ class IntArray
         ~IntArray();
         IntArray(const IntArray& other);
         IntArray& operator=(const IntArray& other);
+        IntArray(IntArray&& other) noexcept;
+        IntArray& operator=(IntArray&& other) noexcept;
         size_t size() const;
         int& operator[](size_t i);
         const int& operator[](size_t i) const;
+        void print(const char* label) const;
 };
 
 IntArray::IntArray(size_t n) //整数数组构造
@@ -43,7 +47,7 @@ IntArray::IntArray(const IntArray& other) // 拷贝构造
 
 IntArray& IntArray::operator=(const IntArray& other) //拷贝赋值
 {    
-    cout << "执行拷贝赋值函数" << endl;
+    cout << "执行拷贝赋值运算符" << endl;
     if (this == &other)
         return *this;              // 防止自拷贝
 
@@ -54,6 +58,31 @@ IntArray& IntArray::operator=(const IntArray& other) //拷贝赋值
     for(size_t i = 0; i < size_; i++)
         data_[i] = other.data_[i]; // 赋值
     
+    return *this;
+}
+
+IntArray::IntArray(IntArray&& other) noexcept // 移动构造
+    : data_(other.data_)                      // 接管指针
+    , size_(other.size_)
+{
+    cout << "调用移动构造函数" << endl;
+    other.data_ = nullptr;                    // 不delete，因为同一片地址现在被this->data_接管，只把旧的指针设为空指针
+    other.size_ = 0;
+}
+
+IntArray& IntArray::operator=(IntArray&& other) noexcept // 移动赋值
+{
+    cout << "调用移动赋值运算符" << endl;
+    if (&other == this)
+        return *this;
+    
+    delete[] data_;
+
+    data_ = other.data_;
+    size_ = other.size_;
+    other.data_ = nullptr;
+    other.size_ = 0;
+
     return *this;
 }
 
@@ -72,40 +101,67 @@ const int& IntArray::operator[](size_t i) const
     return data_[i];
 }
 
+void IntArray::print(const char* label) const
+{
+    cout << "{\n数组名为：" << label << endl;
+    cout << "数组大小：" << size_ << endl; 
+    if (size_ == 0)
+        cout <<"数组为：\n[]\n}\n";
+    else
+        cout << "数组为：" << endl << "[";
+    for(size_t i = 0; i < size_; i++)
+    {
+        if (i != size_ - 1)
+            cout << data_[i] << ", ";
+        else
+            cout << data_[i] << "]\n}\n";
+    }
+}
+
 int main()
 {
     IntArray vd(0); // 空数组测试
     IntArray vd_1 = vd; //空数组的拷贝构造
+    vd.print("vd");
+    vd_1.print("vd_1");
     IntArray a(4);
     a[0] = 99;
     a[1] = 98;
     a[2] = 97;
     a[3] = 96;
-    for(size_t i = 0; i < a.size(); i++)
-        cout << a[i] << endl;
+    a.print("a");
 
     IntArray b = a; // 拷贝构造
-    for(size_t i = 0; i < b.size(); i++)
-        cout << b[i] << endl;
-    b[2] = 2;
+    b.print("b");
     cout << a[2] << endl; // 测试深拷贝
 
     IntArray c(5);
     c = a; // 拷贝赋值
-    for(size_t i = 0; i < c.size(); i++)
-        cout << c[i] << endl;
+    c.print("c");
     c[2] = 3;
     cout << a[2] << endl; //测试深拷贝
 
     a = b = c; // 结果是将最右边的值赋给前面两个
-    for(size_t i = 0; i < a.size(); i++)
-        cout << a[i] << endl;
+    a.print("a");
 
     a = a; // 测试自赋值
 
-    const IntArray cia(3);
-    for(size_t i = 0; i < cia.size(); i++)
-        cout << cia[i] << endl;
+    const IntArray cia(3);  // 常量读取检查
+    cia.print("cia");
+
+    IntArray mov_a = std::move(a); // 移动构造
+    mov_a.print("mov_a");
+    a.print("a"); // 它变空了
+
+    a = std::move(cia); // 调用了拷贝赋值运算，因为cia 是const的。
+    a.print("a");
+    cia.print("cia");
+
+    a = std::move(b); // 调用移动赋值运算
+    a.print("a");
+    b.print("b");
+
+    return 0;
 }
 // 1.假若没写拷贝构造函数，编译器将自动编写拷贝构造函数，在拷贝时进行浅拷贝，
 //   这时对于指针的拷贝会直接拷贝地址，在改动任意一个时两个都会被改动，析构是还会双重释放导致崩溃。

@@ -337,3 +337,346 @@ const 对象只能调用 const 成员函数。这是 const 正确性的一部分
 - `const` 成员函数不会修改对象——写一个不加 const 的 getter 是坏习惯
 - 拷贝构造中 `new T[n]()` 后立刻循环赋值 → 双重初始化，去掉 `()`
 - 遍历对象用**自己的** `size()`，别用其他对象的——即使它们相等，语义不对
+
+---
+
+## 第 5 课：RAII 与移动语义
+
+### RAII（Resource Acquisition Is Initialization）
+
+> 构造时获取资源，析构时释放资源。对象的生命周期 = 资源的持有期。
+
+```cpp
+// IntArray 就是 RAII 的典范
+IntArray::IntArray(size_t n) : data_(new int[n]()), size_(n) {}  // 获取
+IntArray::~IntArray() { delete[] data_; }                         // 释放
+```
+
+**为什么重要**：
+- 异常安全：即使抛异常，局部对象的析构函数保证执行
+- 不会忘记释放：离开作用域自动释放
+- C++ 核心惯用法：智能指针、容器、文件流都基于 RAII
+
+### 左值 vs 右值
+
+| 概念 | 说明 | 例子 |
+|------|------|------|
+| 左值 (lvalue) | 有名字、可取址、可持久 | `x`, `arr[3]`, `*p` |
+| 右值 (rvalue) | 临时的、即将消亡 | `42`, `x+y`, `std::string("hi")` |
+
+### 右值引用 `T&&`
+
+C++11 引入，专门绑定到右值：
+
+```cpp
+int&& r = 42;            // ✅ 绑定到右值
+int x = 10;
+int&& r2 = std::move(x); // ✅ std::move 把左值转成右值引用
+// int&& r3 = x;         // ❌ 不能绑左值
+```
+
+**`std::move` 不移动任何东西**——它只做类型转换：左值 → 右值引用，表示"这个对象我不再需要了，你可以偷它的资源"。定义在 `<utility>`。
+
+### 移动构造函数
+
+"偷"资源而不是拷贝——**O(1) 而非 O(n)**：
+
+```cpp
+IntArray::IntArray(IntArray&& other) noexcept   // ⚠️ 必须 noexcept
+    : data_(other.data_)                         // 直接接管指针
+    , size_(other.size_)
+{
+    other.data_ = nullptr;                       // 留空，让 other 可安全析构
+    other.size_ = 0;
+}
+```
+
+### 移动赋值运算符
+
+```cpp
+IntArray& IntArray::operator=(IntArray&& other) noexcept {
+    if (this == &other)           // 自赋值检查
+        return *this;
+    delete[] data_;               // 释放自己的旧资源
+    data_ = other.data_;          // 偷
+    size_ = other.size_;
+    other.data_ = nullptr;        // 留空
+    other.size_ = 0;
+    return *this;
+}
+```
+
+### Rule of Five（五法则）
+
+> Rule of Three + 移动构造 + 移动赋值 = **Rule of Five**
+
+1. `~T()` — 析构
+2. `T(const T&)` — 拷贝构造
+3. `T& operator=(const T&)` — 拷贝赋值
+4. `T(T&&) noexcept` — **移动构造**
+5. `T& operator=(T&&) noexcept` — **移动赋值**
+
+### `noexcept` 为什么必须
+
+```cpp
+IntArray(IntArray&&) noexcept = default;
+```
+
+STL 容器（如 `std::vector`）扩容时，如果移动构造不是 `noexcept`，就**退化到拷贝**（为了强异常保证）。不加 `noexcept` → 移动优化永不被调用。
+
+### 编译器何时自动生成移动操作
+
+| 你定义了 | 编译器行为 |
+|----------|-----------|
+| 什么都没定义 | 全 5 个都生成 |
+| 定义了拷贝/析构之一 | **不生成移动操作**，退化到拷贝 |
+| 定义了移动操作 | 拷贝操作被 `= delete` |
+
+### `const T&&` 的陷阱
+
+```cpp
+const IntArray cia(3);
+a = std::move(cia);  // std::move(cia) → const IntArray&&
+// const T&& 不能绑定到 T&&（非 const），只能绑定到 const T&
+// → 调用的是拷贝赋值，不是移动赋值！
+```
+
+### 常见错误
+
+**❌ 手动调用析构函数**
+```cpp
+obj.~IntArray();  // 永远不要对栈对象这样做！
+// 离开作用域时自动析构 → 双重析构 → double free
+```
+
+RAII 的整个目的就是让你**忘记手动释放**。编译器全自动管理。
+
+### 开发习惯
+
+- 管资源的类必须实现 Rule of Five（或 `= delete` 禁止）
+- 移动操作必须加 `noexcept`
+- 移动后原对象必须处于"可安全析构"状态（通常是 `nullptr` + 零值）
+- `std::move` 需 `#include <utility>`
+- 永远不要手动调用析构函数——用 `{}` 嵌套作用域控制生命周期
+- 析构函数中 `delete[]` 后置 `nullptr` 是防御性编程（防止野指针复用）
+
+---
+
+## 第 6 课：模板基础
+
+### 为什么需要模板
+
+不用模板 → 每种类型写一个类 → 代码重复：
+
+```cpp
+class IntArray { int* data_; ... };
+class DoubleArray { double* data_; ... };
+// 换汤不换药，维护噩梦
+```
+
+模板让你**写一套代码**，编译器为每个类型**自动生成**一份。
+
+### 函数模板
+
+```cpp
+template <typename T>
+T max(T a, T b) {
+    return (a > b) ? a : b;
+}
+
+int x = max(10, 20);                  // T = int，自动推导
+double y = max(3.14, 2.71);           // T = double
+```
+
+编译器在**编译期**根据调用自动推导 `T`，为每个用到的类型生成真实函数——这叫**模板实例化**。
+
+### 类模板
+
+```cpp
+template <typename T>
+class Array {
+    T* data_;           // 原来是 int* data_
+    size_t size_;
+public:
+    Array(size_t n);
+    ~Array();
+    // ... Rule of Five ...
+};
+```
+
+**类外定义成员函数的语法**：
+
+```cpp
+template <typename T>         // 每个函数前都要写
+Array<T>::Array(size_t n)     // 类名必须带 <T>
+    : data_(new T[n]())       // new T[n]() 对任意 T 都是值初始化
+    , size_(n)
+{}
+```
+
+三条记忆点：
+1. 每个类外成员函数前加 `template <typename T>`
+2. 类名后必须带 `<T>`
+3. 函数体内的 `T` 就是用户指定的类型
+
+### `typename` vs `class`
+
+```cpp
+template <typename T>   // ✅ 现代推荐
+template <class T>      // ✅ 等价，C++98 遗留
+```
+
+在模板参数声明中**完全等价**。用 `typename` 更清晰表达"任意类型"。
+
+### 模板成员函数的参数名
+
+```cpp
+template <typename T>
+class Array { ... };
+
+// 成员函数定义时，参数名可以不同！
+template <typename L>     // L 也可以！
+size_t Array<L>::size() { ... }
+```
+
+编译器按**位置**匹配模板参数，不按名称。但实践中应统一用 `T`——否则读者来回猜。
+
+### 编译模型
+
+模板的声明和定义**必须在同一文件中**（头文件）。编译器必须看到完整定义才能在实例化时生成代码。不像普通函数可以 `.h` 声明 + `.cpp` 定义。
+
+### 非类型模板参数
+
+```cpp
+template <typename T, size_t N>
+class StaticArray {
+    T data_[N];  // 栈上数组，编译期固定大小
+};
+
+StaticArray<int, 100> arr;  // 100 是编译期常量
+```
+
+这就是 `std::array` 的原理——无堆分配。
+
+### 值初始化 `new T[n]()`
+
+```cpp
+new int[5]()       // 全部 0
+new double[5]()    // 全部 0.0
+new string[5]()    // 全部 ""
+```
+
+`()` 对基本类型清零，对类类型调用默认构造函数。模板编程中确保安全初始化的关键手段。
+
+### 开发习惯
+
+- 模板声明和定义都放头文件
+- 类模板成员函数前统一写 `template <typename T>`
+- 参数名统一用 `T`，不玩花样
+- `new T[n]()` 的值初始化对模板是安全底线
+- 测试模板至少用 3 种类型：基本类型（`int`）、浮点（`double`）、类类型（`std::string`）
+- 模板化不改变 Rule of Five 的要求——仍应测试拷贝/移动
+- `const` 正确性在模板化时容易丢失——每个成员函数都要复查
+
+---
+
+## 第 7 课：STL 概览
+
+### STL 四大组件
+
+| 组件 | 作用 | 例子 |
+|------|------|------|
+| **容器** | 存储数据 | `vector`, `list`, `map`, `set` |
+| **算法** | 操作数据 | `sort`, `find`, `unique` |
+| **迭代器** | 连接容器和算法 | `begin()`, `end()` |
+| **函数对象** | 自定义行为 | lambda, `std::greater<>` |
+
+### 序列容器速查
+
+| 容器 | 底层 | 随机访问 | 头插入 | 尾插入 | 中间插入 |
+|------|------|----------|--------|--------|----------|
+| `vector` | 动态数组 | O(1) | O(n) | O(1)* | O(n) |
+| `list` | 双向链表 | ❌ | O(1) | O(1) | O(1)** |
+| `deque` | 分段数组 | O(1) | O(1) | O(1) | O(n) |
+
+*vector 尾插入是**均摊** O(1)（扩容时偶尔 O(n)）
+**list 中间插入是 O(1)，但找到插入位置需要 O(n) 遍历
+
+**选择原则**：默认用 `vector`，有特殊需求再看别的。
+
+### 关联容器速查
+
+```cpp
+std::set<int> s = {3, 1, 4, 1};  // {1, 3, 4} 自动排序去重
+std::map<std::string, int> ages;  // 有序键值对（红黑树）
+ages["Jacob"] = 22;
+
+std::unordered_set<int> us;       // 哈希表，无序，O(1) 平均
+std::unordered_map<std::string, int> um; // 哈希表
+```
+
+### 容器适配器
+
+- `std::stack<T>` — LIFO，`push()`/`pop()`/`top()`
+- `std::queue<T>` — FIFO，`push()`/`pop()`/`front()`
+- `std::priority_queue<T>` — 最大元素先出（堆）
+
+### 核心算法 `#include <algorithm>`
+
+```cpp
+std::sort(v.begin(), v.end());                         // O(n log n)
+std::sort(v.begin(), v.end(), [](int a, int b) {       // lambda 自定义
+    return a > b;  // 降序
+});
+auto it = std::find(v.begin(), v.end(), 4);            // O(n)
+std::binary_search(v.begin(), v.end(), 4);             // O(log n)，需已排序
+
+// remove-erase idiom（去重标准做法）
+std::sort(v.begin(), v.end());
+auto it = std::unique(v.begin(), v.end());  // 把重复元素移到末尾，返回新 end
+v.erase(it, v.end());                        // 真正删除
+```
+
+### 迭代器 = 泛化指针
+
+```cpp
+auto it = v.begin();   // 指向第一个元素
+*it;                   // 解引用
+++it;                  // 前进
+v.end();               // 尾后（不指向任何元素）
+// 所有算法都用 [begin, end) 半开区间
+```
+
+### 范围 based for 循环（C++11）
+
+```cpp
+for (const auto& x : container)  // 推荐：不拷贝，不可改
+for (auto& x : container)        // 不拷贝，可修改
+for (auto x : container)         // 拷贝，尽量避免
+```
+
+### 结构化绑定（C++17）
+
+```cpp
+std::map<std::string, int> ages;
+for (const auto& [name, age] : ages)  // 直接解包 pair
+    std::cout << name << " -> " << age << "\n";
+```
+
+### `std::array` vs `std::vector` vs C 数组
+
+| | C 数组 `T[N]` | `std::array<T,N>` | `std::vector<T>` |
+|---|---|---|---|
+| 大小 | 编译期固定 | 编译期固定 | 运行时可变 |
+| 内存 | 栈 | 栈 | 堆 |
+| 边界检查 | ❌ | `at()` ✅ | `at()` ✅ |
+| 赋值/传参 | 退化指针 | 正常值语义 | 正常值语义 |
+
+### 开发习惯
+
+- 循环变量用 `size_t` 与 `.size()` 返回类型一致
+- 遍历容器优先 `const auto&`，避免意外拷贝
+- 会用 `set` 去重，也要会用 `sort` + `unique` + `erase`
+- `std::endl` = `\n` + flush；不需要立即刷新时用 `\n`
+- 头文件显式包含：用到 `std::string` 就 `#include <string>`，不依赖间接包含
+- 遍历循环中不硬编码长度，始终用 `.size()`
