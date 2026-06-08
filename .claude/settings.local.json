@@ -12,7 +12,11 @@
       "Bash(g++ -std=c++17 -Wall -Wextra -fsanitize=address -g -o C++_Basic/dynamic_memory C++_Basic/dynamic_memory.cpp)",
       "Bash(./C++_Basic/dynamic_memory)",
       "Bash(g++ -std=c++17 -Wall -Wextra -fsanitize=address -g class_objects.cpp -o class_objects)",
-      "Bash(./class_objects *)"
+      "Bash(./class_objects *)",
+      "Bash(g++ -std=c++17 -Wall -Wextra -fsanitize=address -g template_basics.cpp -o template_basics)",
+      "Bash(./template_basics)",
+      "Bash(g++ -std=c++17 -Wall -Wextra -fsanitize=address -g stl_overview.cpp -o stl_overview)",
+      "Bash(./stl_overview)"
     ]
   }
 }
