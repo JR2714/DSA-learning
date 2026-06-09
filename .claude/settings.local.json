@@ -16,7 +16,15 @@
       "Bash(g++ -std=c++17 -Wall -Wextra -fsanitize=address -g template_basics.cpp -o template_basics)",
       "Bash(./template_basics)",
       "Bash(g++ -std=c++17 -Wall -Wextra -fsanitize=address -g stl_overview.cpp -o stl_overview)",
-      "Bash(./stl_overview)"
+      "Bash(./stl_overview)",
+      "WebSearch",
+      "Bash(apt list *)",
+      "Bash(dpkg -l)",
+      "Bash(sudo apt-get install -y poppler-utils)",
+      "Bash(grep -n \"^[0-9]\\\\{1,4\\\\}$\" /home/jacob/DSA/DSAA_Weiss.text)",
+      "Bash(grep -n \"^Algorithm Analysis$\\\\|^CHAPTER 2\\\\|^Chapter 2\\\\|^2\\\\.1 \" /home/jacob/DSA/DSAA_Weiss.text)",
+      "Bash(grep -n \"^[0-9]\\\\{1,3\\\\}$\" /home/jacob/DSA/DSAA_Weiss.text)",
+      "Bash(grep *)"
     ]
   }
 }
