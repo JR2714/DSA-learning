@@ -680,3 +680,65 @@ for (const auto& [name, age] : ages)  // 直接解包 pair
 - `std::endl` = `\n` + flush；不需要立即刷新时用 `\n`
 - 头文件显式包含：用到 `std::string` 就 `#include <string>`，不依赖间接包含
 - 遍历循环中不硬编码长度，始终用 `.size()`
+
+---
+
+## 选做习题：Weiss Ch.1 精选
+
+### 1.5 — 递归求二进制中 1 的个数
+
+**题目**：递归函数返回 N 的二进制表示中 1 的个数。提示：N/2 的 1 的个数 + (N 为奇数时加 1)。
+
+**最终代码**（简化版）：
+```cpp
+int numOfOne(int N) {
+    if (N == 0) return 0;
+    return numOfOne(N / 2) + (N % 2);
+}
+```
+
+**反思**：
+- `N % 2` 在偶数时等于 0、奇数时等于 1，恰好就是应该加的值——不需要 if/else 分两种 case
+- `const int&` 对基本类型是反模式：引用比 int 本身还大，多一次间接寻址
+- 理解了背后的二进制原理后才算真正做完这题
+
+#### 关联知识：二进制与补码
+
+- **计算机只有二进制**：源码 `38`、`0b100110`、`0x26` 生成同样的机器码
+- **补码（Two's Complement）** 是现代标准：负数 = 正数取反 + 1，最高位权重为负
+- **`N % 2` 对负数有陷阱**：`-5 % 2 = -1`，不是 1。想通用就用 `unsigned` 或 `N & 1`
+- 位运算 `N & 1` / `N >> 1` 对 `unsigned` 完全安全
+
+### 1.6 — 全排列（回溯法）
+
+**题目**：输出字符串所有排列。`permute(const string& str)` 为驱动，`permute(string& str, int low, int high)` 递归。
+
+**核心想法**：逐位确定。`low` 是"当前要确定的椅子"，`[low, high]` 是待排列区。
+
+```
+abc, low=0
+├─ i=0: swap(a,a) → abc → 递归 low=1 → 打印 abc, acb → swap(a,a) 恢复
+├─ i=1: swap(a,b) → bac → 递归 low=1 → 打印 bac, bca → swap(a,b) 恢复
+└─ i=2: swap(a,c) → cba → 递归 low=1 → 打印 cba, cab → swap(a,c) 恢复
+```
+
+**最终代码结构**：
+```cpp
+void permute(string& str, int low, int high) {
+    if (low == high)
+        cout << str << endl;
+    else
+        for (int i = low; i <= high; i++) {
+            swap(str[low], str[i]);        // 选字符 i 坐椅子 low
+            permute(str, low + 1, high);   // 递归排后面的椅子
+            swap(str[low], str[i]);        // 回溯：恢复原样！
+        }
+}
+```
+
+**关键理解**：
+- **第三个 swap 是灵魂**——不恢复的话，后续循环从被污染的字符串出发，输出错乱
+- **回溯 = 试探 + 撤销**。每步做选择，递归探索，返回时撤销选择
+- Weiss 第二个声明有 `const`，但交换法需要修改字符串——驱动函数做一份拷贝解决
+- `std::swap` 定义在 `<utility>`，显式包含更规范
+- 这是 Ch.10 回溯/分支限界的预备知识，空间 O(N) 的优雅解法
