@@ -4,5 +4,3 @@
 *.o
 bin/
 
-# IDE
-.vscode/
