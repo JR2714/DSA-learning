@@ -18,7 +18,7 @@ int sub_binarySearch(const vector<Comparable>& a, const Comparable& x, int left,
     else if (x < a[mid])
         return sub_binarySearch(a, x, left, mid - 1);
     else
-        return sub_binarySearch(a, x, mid + 1, right);
+        return sub_binarySearch(a, x, mid + 1, right); //习题2.31：若用mid替代mid + 1，则无法停止算法，因为两元素的数组mid无论再怎么迭代都是当前low不变。
 }//对于总量为N的数据，递归深度最坏为O(log N)，每递归一次要进行储存，从而是O(log N).
 
 //封装接口
