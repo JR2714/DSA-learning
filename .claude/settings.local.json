@@ -28,7 +28,8 @@
       "Skill(dsa-review)",
       "Bash(g++ *)",
       "Bash(/home/jacob/DSA/bin/ex_2.17 *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(/home/jacob/DSA/bin/2_coding)"
     ]
   }
 }
