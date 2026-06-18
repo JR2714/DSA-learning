@@ -2,7 +2,7 @@
 name: dsa-review
 description: "审查 DSA 练习代码：按五维标准（语法/边界/风格/效率/稳定性）全面审查，含编译和 ASan 内存检查。当用户提交代码或请求审查时使用。"
 argument-hint: "<file.cpp> [可选：额外的审查维度或关注点]"
-allowed-tools: Read, Bash, Grep, Glob
+allowed-tools: Read, Bash, Grep, Glob, Edit, AskUserQuestion
 user-invocable: true
 ---
 
@@ -93,8 +93,14 @@ g++ -std=c++17 -Wall -Wextra -fsanitize=address -g <file> -o bin/<output>
 [✓ 全部通过 / ⚠ 有小问题需改进 / ✗ 存在必须修复的问题]
 ```
 
+## 补充测试代码
+- 如果提交的代码缺少 `main` 函数导致无法运行 ASan 检查，可以在文件末尾临时添加测试用的 `main` 函数
+- **添加前必须用 AskUserQuestion 询问用户许可**
+- 添加的测试 `main` 前必须写注释 `// 测试用`
+- 测试结束后提醒用户可以删除
+
 ## 重要约束
-- **只指出问题，不修改代码**：告诉 Jacob 哪里有问题、为什么是问题，让他自己修改
+- **只指出问题，不修改代码**：告诉 Jacob 哪里有问题、为什么是问题，让他自己修改（测试 main 是例外，但需先获许可）
 - **严格但建设性**：每指出一个问题，解释原因
 - **代码完美就直说**：如果五维全过，明确表示"代码没有发现问题"
 - **不要过度挑剔风格**：如果风格一致且可读，不用纠结细微偏好

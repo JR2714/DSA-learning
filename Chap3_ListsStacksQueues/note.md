@@ -88,3 +88,99 @@ void removeDuplicates(Container& lst) {
 - 嵌套循环 + erase 不能简单乘阶数得到 O(N³)
 - 要追踪每条数据的"生命周期"：被删后就不再参与后续操作
 - 紧确界（Θ）需要同时证上界和下界，构造极端案例是关键
+
+---
+
+## L2: vector 与 list 的底层实现 (§3.4–3.5)
+
+### SimpleVector 实现要点
+
+**三成员结构**：`theSize`, `theCapacity`, `objects*` — 将 C 数组手动维护的三变量封装进类。
+
+**reserve 的 swap 惯用法**：
+```cpp
+Object *newArray = new Object[newCapacity];
+for(int i = 0; i < theSize; ++i)
+    newArray[i] = std::move(objects[i]);  // 移动避免深拷贝
+std::swap(objects, newArray);             // 异常安全
+delete[] newArray;                        // 释放的是旧数组！
+theCapacity = newCapacity;
+```
+`delete[] newArray` 释放旧数组——因为 swap 后 newArray 已指向原 objects。
+
+**push_back 的后置 ++**：`objects[theSize++] = x` — 先用旧 theSize 索引，再自增。与迭代器 `*itr++` 同一惯用法。前缀 `++theSize` 会导致索引错位。
+
+**扩容因子 ×2**：见下方均摊分析。
+
+**迭代器是裸指针**：vector 的迭代器可直接用 `typedef Object* iterator`，因为指针在连续内存上天然支持 `++`, `*`, `==`, `!=`。
+
+### SList 实现要点
+
+**哨兵节点（Header Node）**：永久存在的空节点，不存数据，`head->next` 指向第一个数据节点（或 nullptr）。
+
+**哨兵消除所有头部特判**：
+- 无哨兵：push_front 需修改 head 指针本身，属于特殊情况
+- 有哨兵：push_front = insert_after(head)，和中间插入完全一致
+
+**单节点 erase_after 的正确语义**：
+```cpp
+bool erase_after(Node* node) {
+    if(node != nullptr && node->next != nullptr) {
+        Node* toDelete = node->next;
+        node->next = toDelete->next;  // 跳过
+        delete toDelete;
+        return true;
+    }
+    return false;  // 没有后继 → 什么都不做
+}
+```
+三个关键点：(1) 只删一个，(2) 空指针检查，(3) 返回 bool 让析构可以 `while(erase_after(head)){}` 循环清空。
+
+**print() 的循环条件**：`while(p != nullptr)`，不是 `while(p->next != nullptr)`。后者在空链表（p=nullptr）时解引用崩溃，且在非空链表漏打最后一个节点。
+
+**Node 是 private 但 begin() 返回 Node\***：这是 API 矛盾——外部无法声明 `Node*` 变量。正确做法是提供公开的 iterator typedef。
+
+### 哨兵节点的设计哲学
+
+**问题**：链表操作（insert/erase）需要访问"目标位置的前驱"。对于头节点的插入/删除，没有前驱。
+
+**三种解决方案**：
+
+| 方案 | 做法 | 代价 |
+|------|------|------|
+| 特判 | 每个操作分"头"和"非头"两条路径 | 代码膨胀，容易出错 |
+| 指针的指针 | `Node** indirect = &head` 统一处理 | 概念负担重，不适用于双向链表 |
+| 哨兵节点 | 恒有"前驱"的哑元节点 | 一个永久节点的内存 + 析构时多删一个 |
+
+**哨兵的本质**：用一个恒不用存数据的节点，换取"永远不会在头部没有前驱"的不变式。所有节点——包括第一个数据节点——在 insert/erase 的视角下都和中间节点没有区别。
+
+Weiss 在双向链表中用了**两个哨兵**（header + tail），带来的好处更显著：不仅头部操作统一，尾部操作也不需要特判——tail 哨兵保证了最后一个数据节点后面永远有节点，`pop_back` 就是 `erase(--end())`，和中间删除一样。
+
+### 均摊分析直觉
+
+**为什么 ×2 扩容是 O(1) 均摊？**
+
+常量扩容（每次 +C）：
+- N 次 push_back 触发 N/C 次扩容
+- 第 k 次扩容复制 O(k·C) 个元素
+- 总复制：O(N²)，均摊 O(N) ❌
+
+翻倍扩容（每次 ×2）：
+- 扩容发生在 size = 1, 2, 4, 8, ..., 2^k
+- 第 k 次扩容复制 2^k 个
+- 总复制：1 + 2 + 4 + ... + 2^k = 2·2^k - 1 ≤ 2N
+- 总复制 O(N)，均摊 O(1) ✓
+
+**直觉**：每次扩容的代价被后续大量"廉价"push_back 摊平。扩容间隔是指数增长的——越大，下次扩容越远。
+
+**shrink_to_fit 破坏均摊保证**：反复 `push_back → shrink_to_fit` 将积累的"信用额度"（空闲 capacity）一笔勾销，导致每次 push_back 都是 O(N)。
+
+### 常见错误记录
+
+| 错误 | 后果 | 修复 |
+|------|------|------|
+| 拷贝构造未 delete | 浅拷贝 → double-free | `= delete` 或实现深拷贝 |
+| `erase_after` 循环删到底 | 语义错误，一次删整链 | 只删 `node->next` 一个 |
+| `while(p->next)` 代替 `while(p)` | 空链表崩溃 + 漏打尾节点 | `while(p != nullptr)` |
+| 忘记在 insert/erase 中维护 size | size() 返回错误值 | 每个修改操作都更新 theSize |
+| 单链表加 tail 哨兵 | 多余的堆分配，tail 无法反向遍历 | 单链表只需 header 哨兵 |
