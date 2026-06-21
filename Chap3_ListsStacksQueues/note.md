@@ -184,3 +184,107 @@ Weiss 在双向链表中用了**两个哨兵**（header + tail），带来的好
 | `while(p->next)` 代替 `while(p)` | 空链表崩溃 + 漏打尾节点 | `while(p != nullptr)` |
 | 忘记在 insert/erase 中维护 size | size() 返回错误值 | 每个修改操作都更新 theSize |
 | 单链表加 tail 哨兵 | 多余的堆分配，tail 无法反向遍历 | 单链表只需 header 哨兵 |
+
+---
+
+## L3: 栈 ADT — Weiss §3.6 (pp.103–112)
+
+### 栈的定义
+- **受限的线性表**：插入删除只在栈顶（top）
+- **LIFO**（后进先出）
+- 核心操作：`push`（插入）、`pop`（删除栈顶）、`top`（查看栈顶）
+- 空栈 pop/top 是 ADT 错误；push 空间不足是实现限制
+
+### 实现
+- 任何线性表实现都能做栈——99% 情况直接用 `std::vector`/`std::list`
+- **链表实现**：单链表，push=头插，pop=头删
+- **数组实现**：`topOfStack` 索引（空栈=-1），push=`++top` 再赋值，pop=取值再 `--top`
+- 所有操作 O(1)，非常快的常数（现代 CPU 有栈指令）
+
+### 应用 1：平衡符号检查
+- 算法：开符号 push，闭符号 pop 并匹配，栈空时遇闭符号→错，结束时栈非空→错
+- O(N) 单次遍历，online 算法
+
+### 应用 2：后缀表达式求值（Reverse Polish Notation）
+- 见到数字 → push；见到操作符 → pop 两个，运算，结果 push
+- 不需要括号，不需要优先级规则
+- **先 pop 出来的是右操作数**，减法/除法必须注意顺序
+- O(N) 单次遍历
+
+### 应用 3：中缀转后缀
+- 操作数直接输出；操作符暂存栈中（"待处理的操作符"）
+- 遇新操作符时，弹出栈中优先级 **≥** 当前操作符的符号（`(` 停止）
+- **`≥` 而非 `>`**：保证左结合性。`a-b-c` 正确转为 `a b - c -`（`(a-b)-c`），若用 `>` 则错误转为 `a b c - -`（`a-(b-c)`）
+- 左括号：读入时视为最高优先级（阻止弹出），在栈中时视为最低优先级（不被弹出）
+- 右括号：弹出直到左括号（左括号不输出）
+- O(N)
+
+### 应用 4：函数调用栈
+- 每次函数调用：保存寄存器 + 返回地址 → **栈帧（stack frame）/ 活动记录**
+- 函数返回：pop 栈帧，恢复寄存器，跳转返回地址
+- 递归的本质：每次调用 push 新栈帧
+- **栈溢出**：栈帧过多（通常是失控递归——忘了 base case，或用递归处理超长线性结构）
+
+### 练习中的坑
+
+#### `std::stoi` 的行为
+- `std::stoi("123")` → 123 ✓
+- `std::stoi("123abc")` → 123，不报错，`pos=3`
+- `std::stoi("abc")` → 抛 `std::invalid_argument`
+- `std::stoi("9999999999999999")` → 抛 `std::out_of_range`
+- **正确校验整个 token**：`std::stoi(token, &pos)` + 检查 `pos == token.size()`，否则 `"123abc"` 静默通过
+
+#### for 循环体的边界
+- `for(...) { ... }` 后面紧跟的语句是否在循环内，取决于 `}` 的位置
+- 缩进不决定控制流——大括号 `{}` 决定
+- 教训：写完循环立即确认 `{` 和 `}` 之间包含了正确的语句
+
+#### `if` vs `else if`
+- 互斥条件（如 token 是 `+` 或 `-` 或 `*` 或 `/`）应用 `else if` 链
+- 独立 `if` 不会出错但传达错误意图：暗示多个分支可能同时成立
+
+---
+
+## L4: 队列 ADT — Weiss §3.7 (pp.112–115)
+
+### 队列的定义
+- **FIFO**（先进先出），与栈的 LIFO 对称
+- 两个端点：**front（队首）**—dequeue 删除端；**rear（队尾）**—enqueue 插入端
+- 核心操作：`enqueue`（入队）、`dequeue`（出队）、`getFront`（查看队首不删除）
+- 就像排队买票——先来的先服务
+
+### 循环数组实现（Circular Array）
+- 数组 + `front` 索引 + `back` 索引 + `currentSize`
+- 每次 back/front 前进用 `(index + 1) % capacity` 绕回，复用 dequeue 释放的空间
+- 所有操作 O(1)
+
+### 扩容要点
+- 扩容时 front 不一定在 0 位，不能直接 push_back
+- **正确做法**：新建 `arr_temp(2*size + 1)`，按逻辑顺序（front → rear 绕回）复制，swap 后重置 front=0, back=currentSize-1
+- **`+1` 必要**：capacity=0 时 `2*0 = 0`，arr_temp(0) 无法容纳元素。`+1` 保证最小容量为 1
+
+### 显式 currentSize vs front/back 推导法
+- **方案 A（推荐）**：显式 `currentSize`，判空 `size==0`，判满 `size==capacity`，简单不出错
+- **方案 B**：不维护 currentSize，用 front/back 关系推导
+  - 判空：`front ≡ back+1 (mod n)`
+  - 判满：同样是 `front ≡ back+1 (mod n)`——back 绕一圈追上 front
+  - front/back 相对位置只有 n 种，但 size 有 n+1 种（0 到 n），鸽巢原理保证必然冲突
+  - 因此方案 B 最多放 capacity-1 个元素，预留一个空位区分空/满
+- Weiss 原话："This is a very tricky way to go... be very careful"
+
+### 链表实现
+- Weiss 留作习题——straightforward，O(1)
+- front 指针指向队首（dequeue 端），rear 指针指向队尾（enqueue 端）
+- 可用哨兵节点简化边界
+
+### Josephus 问题
+- N 人围圈，每次数 M 下淘汰一个
+- **队列解法**：每轮把 M-1 人从队首出队再入队（传到队尾），第 M 人只出队不入队
+- 时间复杂度 O(N·M)
+
+### 常见错误
+| 错误 | 后果 | 修复 |
+|------|------|------|
+| `size_t back = -1` 误以为错误 | 实际是惯用法：-1 转无符号=最大值，配合 `(back+1)%n` 首次得 0 | 理解无符号回绕 |
+| M=0 时 `i < M-1`（size_t） | 0-1 回绕到 SIZE_MAX → 死循环 | 检查 M==0 |
+| main 变量命名与函数参数颠倒 | 读代码时极易混淆 | 统一命名或用 `people`/`step` |
