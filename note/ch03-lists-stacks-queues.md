@@ -288,3 +288,182 @@ Weiss 在双向链表中用了**两个哨兵**（header + tail），带来的好
 | `size_t back = -1` 误以为错误 | 实际是惯用法：-1 转无符号=最大值，配合 `(back+1)%n` 首次得 0 | 理解无符号回绕 |
 | M=0 时 `i < M-1`（size_t） | 0-1 回绕到 SIZE_MAX → 死循环 | 检查 M==0 |
 | main 变量命名与函数参数颠倒 | 读代码时极易混淆 | 统一命名或用 `people`/`step` |
+
+---
+
+## 习题 3.1: printLots — list vs vector 的选择
+
+### 题目
+给定 list L 和有序整数 list P，打印 L 中位于 P 指定位置的所有元素。
+
+### 解法
+```cpp
+auto itr = L.begin();
+int prev = 0;
+for (int idx : P) {
+    int steps = idx - prev;
+    while (steps--) ++itr;   // 手写 advance，感受 pointer-chasing
+    prev = idx;
+    cout << *itr << "\n";
+}
+```
+
+### 复杂度分析
+- 每个 `++itr` 在 list 中是 O(1)（追一个指针），但不可随机访问
+- 所有 `steps` 之和 = 最后一个 idx ≤ |L|-1，所以总 advance 步数 O(|L|)
+- cout 执行 |P| 次
+- **总复杂度：O(|L| + |P|)**，不是 O(|P|)
+
+### `std::advance` 没有魔法
+```cpp
+advance(itr, n);   // 对 list 等价于
+while (n--) ++itr;  // 逐节点追指针，O(n)
+```
+对 vector：`advance` = `itr += n`（一条指针算术），O(1)。
+
+### 关键反思：为什么不用 vector？
+| 操作 | vector | list |
+|------|--------|------|
+| findKth(i) | O(1) — `*(ptr+i)` | O(i) — 逐节点追指针 |
+| advance n 步 | O(1) — 指针算术 | O(n) — while 循环 |
+| 迭代器类型 | RandomAccess | Bidirectional |
+
+**printLots 本质是 findKth 密集型操作 → vector 更合适。**
+
+### 教训
+- 数据结构的选择取决于**操作模式**：频繁按位置访问 → vector；频繁头部插入删除 → list
+- STL 的便利函数（`advance`）没有改变底层数据结构的复杂度
+- 在"练习要求用 list"和"实际应该用 vector"之间保持清醒——前者是教学，后者是工程判断
+
+---
+
+## 习题 3.4 & 3.5: 有序链表交集 ∩ 与并集 ∪
+
+### 题目
+
+给定两个已排序列表 L₁ 和 L₂，只用基本列表操作计算 L₁ ∩ L₂（3.4）和 L₁ ∪ L₂（3.5）。
+
+### 算法：双指针归并
+
+两个函数共享同一核心结构——一个 itr 跟踪 L₂ 位置，外层遍历 L₁，内层消费 L₂ 中小于当前 L₁ 元素的节点。
+
+```
+交集 ∩                              并集 ∪
+for i in L₁:                        for i in L₁:
+  while *itr < i: ++itr               while *itr < i:
+  if *itr == i: push(i)                 去重 push(*itr); ++itr
+                                      去重 push(i)
+                                    while itr != end:        ← 并集特有
+                                      去重 push(*itr++)       ← 消费 L₂ 尾部
+```
+
+- **复杂度**：O(|L₁| + |L₂|)，每个迭代器只前进不后退
+- **空间**：O(|result|)
+- `const Comparable&` 遍历避免拷贝
+- itr 单调前进——不回头，这是 O(N+M) 的关键
+
+### 去重策略
+
+两个函数都用 `result.empty() || x != result.back()` 保证输出无连续重复（输入已排序时等价于全局去重）。这个模式在并集中出现了三次：（1）内层消费 L₂，（2）外层 push L₁，（3）尾部追加 L₂。
+
+### 本次审查踩过的坑
+
+见 [[iterator-list-pitfalls]]，三个坑全踩了：迭代器不检查 end、空列表 back()、while 条件混入去重导致丢尾。
+
+---
+
+## 习题 3.24: 移动语义与 Rule of Five（两栈共享数组）
+
+### 移动语义：`&&` 如何避免多余的构造
+
+**问题**：假设函数只接受 `const T&`：
+```cpp
+void push(const T& x) {
+    arr_[size_] = x;    // 一定是拷贝
+}
+```
+调用者传递临时对象 `push(999)` 或显式 `push(std::move(obj))` 时，x 仍然走拷贝——即便原对象马上就没用了。
+
+**解决**：增加一个接收 `T&&` 的重载：
+```cpp
+void push(T&& x) {                    // ① T&& 让编译器知道：这是"接受临时值"的版本
+    arr_[size_] = std::move(x);       // ② 函数体内接管 x 的内存，而非复制
+}
+```
+- 编译器自动选择：传左值 → `push(const T&)`；传右值（临时对象、`std::move()` 结果）→ `push(T&&)`。
+- **本质**：`std::move` 不移动任何东西——它是一个 cast，把对象标记为"可被掠夺"。紧接着的 `operator=` 才是真正搬走资源的操作。
+- **好处**：无需构造一份临时副本再丢进容器——直接接管原对象的内存（对 `T` 为 `std::string` 这类持有堆内存的类型尤其有效）。
+
+### 移动构造：直接接管指针
+
+```cpp
+DoubleStacks(DoubleStacks&& other) noexcept
+:arr_{other.arr_}             // ① 直接抄指针——不分配新数组
+,left_size_{other.left_size_}
+,right_size_{other.right_size_}
+,N_{other.N_} {
+    other.arr_ = nullptr;     // ② 原对象置空，防止析构时 delete
+    other.N_ = other.left_size_ = other.right_size_ = 0;
+}
+```
+三步逻辑：(1) 接管资源（指针赋值），(2) 接管元数据（size/N），(3) 让原对象进入"空壳"状态（`nullptr + 0`）。`noexcept` 确保 `std::vector<DoubleStacks>` 扩容时优先走移动而非拷贝。
+
+### 拷贝赋值：copy-and-swap 惯用法
+
+```cpp
+DoubleStacks& operator=(const DoubleStacks& other) {
+    if(this == &other) return *this;   // ① 自赋值检查
+    DoubleStacks temp(other);           // ② 先分配新内存、复制数据（拷贝构造）
+    std::swap(*this, temp);             // ③ 交换指针和元数据
+    return *this;                       // ④ temp 析构，释放旧资源
+}
+```
+
+**为什么是"先分配再 swap"而非"先 delete 再分配"？**
+
+| 方案 | 步骤 | 异常安全性 |
+|------|------|-----------|
+| 先 delete 再 new | `delete[] arr_` → `arr_ = new T[...]` → 复制 | ❌ 若 new 抛异常，`arr_` 已悬空，对象不可用 |
+| copy-and-swap | `temp = copy(other)` → `swap(*this, temp)` | ✓ temp 构造失败 → `*this` 毫发无损；构造成功 → swap 不抛异常 |
+
+**关键洞察**：分配风险最大的操作（`new`、元素复制）全部在 `temp` 身上完成。`temp` 崩溃？函数退出，`*this` 原封不动。`temp` 成功？`swap` 只是交换指针和三个 `size_t`，不可能失败。
+
+### 移动赋值：直接接管
+
+```cpp
+DoubleStacks& operator=(DoubleStacks&& other) noexcept {
+    if(this == &other) return *this;
+    delete[] arr_;               // ① 释放自己已有的资源
+    arr_ = other.arr_;           // ② 接管 other 的资源
+    // ... size/N_ 同理 ...
+    other.arr_ = nullptr;        // ③ 让 other 变空壳
+    return *this;
+}
+```
+移动赋值的代价：一次 `delete[]` + 四次值拷贝。拷贝赋值的代价：一次完整的内存分配 + 完整复制 + swap。移动的常量因子远小于拷贝。
+
+### 初始化列表顺序与 `-Wreorder`
+
+成员初始化的顺序**永远**由声明顺序决定，与初始化列表中的书写顺序无关：
+```cpp
+private:
+    T* arr_;             // ← 第 1 个初始化
+    size_t left_size_;   // ← 第 2 个
+    size_t right_size_;  // ← 第 3 个
+    size_t N_;           // ← 第 4 个
+```
+```cpp
+// ❌ 写成了 arr_, N_, left_size_, right_size_ → -Wreorder
+// ✓ 改成 arr_, left_size_, right_size_, N_       → 无警告
+```
+即使功能碰巧正确（因为 `left_size_` 不依赖 `this->N_`），顺序不一致就是警告。养成习惯：初始化列表顺序 = 声明顺序。
+
+### 拷贝构造函数：只复制有效元素
+
+```cpp
+for(size_t i = 0; i < left_size_; ++i)
+    arr_[i] = other.arr_[i];
+for(size_t i = 0; i < right_size_; ++i)
+    arr_[N_ - i - 1] = other.arr_[N_ - i - 1];
+```
+两段循环只复制左右栈各自占用的区间，跳过中间空闲槽位。与"一股脑复制全部 N_ 个"相比，当 N_ 很大而元素很少时省掉了不必要的拷贝。
