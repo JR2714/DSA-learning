@@ -16,7 +16,7 @@ user-invocable: true
 
 | 类型 | 说明 | 存放位置 |
 |------|------|---------|
-| **记忆** | 跨对话需要的持久事实：偏好变更、资源路径、约定调整、学习进度更新 | `~/.claude/projects/-home-jacob-DSA/memory/` |
+| **记忆** | 跨对话需要的持久事实：偏好变更、资源路径、约定调整、学习进度更新 | 双写：`~/.claude/projects/-home-jacob-DSA/memory/` 和 `./.claude/memory/` |
 | **学习笔记** | 当前 Phase 的知识总结：概念理解、算法要点、常见错误、调试技巧 | 需询问用户（见步骤 2） |
 
 ## 步骤 2：笔记存放位置（仅笔记类型）
@@ -49,11 +49,17 @@ user-invocable: true
    ```
 5. **链接相关记忆**：在内容中使用 `[[other-memory-name]]` 链接到相关记忆
 6. **更新索引**：在 `MEMORY.md` 中添加一行 `- [Title](file.md) — 一句话描述`
+7. **双写**：完成后，将整个 `memory/` 目录同步到项目副本：
+   ```bash
+   cp ~/.claude/projects/-home-jacob-DSA/memory/* .claude/memory/
+   ```
+   如果是编辑（非新建），也执行同步；或者只复制涉及的文件。确保两边内容一致。
 
 ## 步骤 4：更新学习进度（如涉及）
 
 如果保存的内容涉及进度变更（如 Phase 完成），同步更新：
 - `~/.claude/projects/-home-jacob-DSA/memory/learning-progress.md`
+- `./.claude/memory/learning-progress.md`（项目副本）
 - 如有需要，`/home/jacob/DSA/DSA学习计划.md` 中对应 Phase 的完成标记
 
 ## 步骤 5：确认

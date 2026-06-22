@@ -1,0 +1,8 @@
+- [User Background](user-background.md) — Jacob's programming experience, DSA learning context, resources, and teaching preferences
+- [DSA Learning Plan](dsa-learning-plan.md) — The 16-week structured learning plan, aligned with Weiss textbook chapter order
+- [Code Review Standards](code-review-standards.md) — Strict review dimensions: syntax, edge cases, style, efficiency, stability
+- [User Preference - Hands On](user-preference-hands-on.md) — Teaching cycle, roles, pacing; Jacob writes all code, I teach and review
+- [Learning Progress](learning-progress.md) — 当前进度的单一数据源，进度变更只改此文件
+- [Executable Output Location](executable-output-location.md) — Compiled executables go in ./bin, gitignored
+- [Weiss Textbook Resources](weiss-textbook-resources.md) — PDF/text file paths, page numbering convention, chapter line locations
+- [Iterator & List Pitfalls](iterator-list-pitfalls.md) — Recurring STL iterator and list bug patterns from Ch.3 exercise reviews
