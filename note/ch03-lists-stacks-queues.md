@@ -467,3 +467,63 @@ for(size_t i = 0; i < right_size_; ++i)
     arr_[N_ - i - 1] = other.arr_[N_ - i - 1];
 ```
 两段循环只复制左右栈各自占用的区间，跳过中间空闲槽位。与"一股脑复制全部 N_ 个"相比，当 N_ 很大而元素很少时省掉了不必要的拷贝。
+
+---
+
+## 习题 3.25a: findMin O(1) 栈 — 双栈法
+
+### 题目
+设计支持栈 push/pop 和 findMin 的数据结构，全部操作 O(1) 最坏时间。
+
+### 解法：维护最小值栈
+- 主栈 `stack_` 存所有元素
+- 辅助栈 `min_` 与主栈同步增长/收缩，`min_[i]` = `stack_[0..i]` 的最小值
+- `push(x)`: `min_.push_back(min_.empty() || x < min_.back() ? x : min_.back())`
+- `pop()`: 两个栈同时 `pop_back()`
+- `findMin()`: 返回 `min_.back()`
+- 均摊 O(1)，最坏也是 O(1)（每次 push 只做一次比较 + push_back）
+
+### 审查收获：getter 函数的返回类型应为 `const T&`
+
+**问题**：最初 `min()` 返回 `T`（按值返回）：
+```cpp
+T min() const {
+    T val = min_.back();   // 拷贝 1：从 vector 到局部变量
+    return val;            // 拷贝 2（或移动）：从局部变量到调用方
+}
+```
+对 `int` 无影响，但对重 `T`（如 `std::string`）每次调用触发两次拷贝。
+
+**改进**：返回 `const T&`（const 引用）：
+```cpp
+const T& min() const {
+    return min_.back();    // 零拷贝：直接透传 vector 内部的引用
+}
+```
+
+**为什么是 `const T&` 而非 `T&`？**
+- 函数是 `const` 成员函数，内部 `min_` 被视为 const，`min_.back()` 返回 `const T&`
+- 返回非 const `T&` = 允许调用方通过引用修改内部数据 → 破坏封装（能改最小值但主栈不变）
+
+**调用方的选择权**：
+```cpp
+const auto& m = s.min();   // 零拷贝，只读别名
+auto m = s.min();          // 独立副本，可修改，发生一次拷贝
+```
+`auto` 会剥掉引用和顶层 const，所以 `auto m` 得到的是 `T`（独立副本），可以随便改。
+
+**这是 STL 的惯用做法**：`std::vector::back()`、`std::vector::front()` 都返回引用，把要不要拷贝的选择交给调用方。
+
+### `push()` 的异常安全性
+当前实现：
+```cpp
+void push(const T& x) {
+    stack_.push_back(x);      // ① 先压主栈
+    min_.push_back(...);      // ② 再压辅助栈 — 若抛 bad_alloc，两栈失同步
+}
+```
+① 成功后 ② 失败（如 `std::bad_alloc`），`stack_` 已增长而 `min_` 未增长 → 破坏不变量。对 `int` 无关紧要（push_back 不抛），但对泛型 `T` 是隐藏风险。
+
+修复方向（非必须，认知即可）：
+- `reserve` 预分配确保不抛
+- 或先算值、用 scope guard 回滚
