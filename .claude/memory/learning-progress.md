@@ -75,7 +75,7 @@ Started: 2026-06-14
   - 复杂度讨论：对于 vector，虽然 erase 单次 O(N)，但每个元素最多被删一次，总移位 O(N²)，非 O(N³)
   - 练习文件：`Chap3_ListsStacksQueues/1_removeDuplicates.cpp`
   - 分析题：`Chap3_ListsStacksQueues/L1_ADT.md`
-  - 笔记：`Chap3_ListsStacksQueues/note.md`
+  - 笔记：`note/ch03-lists-stacks-queues.md`
 
 - [x] **L2: vector 与 list 的底层实现** (2026-06-16) — §3.4–3.5, pp.86–102
   - Vector: size/capacity/data 三成员，reserve swap 惯用法，×2 扩容均摊 O(1)
@@ -96,7 +96,7 @@ Started: 2026-06-14
   - 练习：`Chap3_ListsStacksQueues/3_isBalanced.cpp`（平衡符号）
   - 练习：`Chap3_ListsStacksQueues/3_evalPostfix.cpp`（后缀求值）
   - 分析题：`Chap3_ListsStacksQueues/3_infixToPostfix.md`（≥ vs >）
-  - 笔记：`Chap3_ListsStacksQueues/note.md`
+  - 笔记：`note/ch03-lists-stacks-queues.md`
 
 - [x] **L4: 队列 ADT** (2026-06-21~22) — §3.7, pp.112–115
   - Queue ADT：FIFO，enqueue(rear) / dequeue(front)
@@ -107,7 +107,7 @@ Started: 2026-06-14
   - 练习：`Chap3_ListsStacksQueues/4_queueByArray.h`（循环数组 Queue）
   - 练习：`Chap3_ListsStacksQueues/4_Josephus.cpp`（约瑟夫问题）
   - 分析题：`Chap3_ListsStacksQueues/4_queueWithoutCurrenSize.md`（方案 B 的容量限制）
-  - 笔记：`Chap3_ListsStacksQueues/note.md`
+  - 笔记：`note/ch03-lists-stacks-queues.md`
 
 ### Ch.3 选做习题
 
@@ -115,12 +115,14 @@ Started: 2026-06-14
   - 核心收获：`advance` 对 list 无魔法（逐节点追指针），对 vector 是 O(1)
   - 数据结构选择取决于操作模式：findKth 密集型 → vector 优于 list
   - 练习文件：`Exercise/ex_3_1.cpp`
-  - 笔记：`Chap3_ListsStacksQueues/note.md`
+  - 笔记：`note/ch03-lists-stacks-queues.md`
 
 - [x] **3.4 L₁ ∩ L₂** (2026-06-22) — 有序链表交集，双指针归并 O(N+M)
 - [x] **3.5 L₁ ∪ L₂** (2026-06-22) — 有序链表并集，同模板 + 尾部追加
-- [ ] 3.24 双栈单数组
-- [ ] 3.25a findMin O(1) 栈
+- [x] 3.24 双栈单数组
+- [x] **3.25a findMin O(1) 栈** (2026-06-24) — 双栈维护最小值，push/pop/findMin 均 O(1)
+  - 审查问题：min() 返回 T 而非 const T& 导致不必要拷贝；push() 非强异常保证
+  - 练习文件：`Exercise/ex_3_25a.cpp`
 - [ ] 3.2 只改链接交换相邻节点
 - [ ] 3.20 惰性删除
 - [ ] 3.28 双端队列（Deque）
