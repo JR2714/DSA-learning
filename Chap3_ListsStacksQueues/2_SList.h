@@ -1,6 +1,8 @@
+#pragma once
 #include <algorithm>
 #include <iostream>
 #include <utility>
+#include <stdexcept>
 
 class SList {
     private:
@@ -19,13 +21,43 @@ class SList {
             {}
         };
 
-        int theSize;
+        size_t theSize;
         Node *head;
         
         void init() {
             theSize = 0;
             head = new Node; //分配到堆上可以有稳定的生命周期，不至于在移动构造时丢失，同时也便于在析构时同数据节点统一释放内存
             head->next = nullptr;
+        }
+
+        // 提供[]运算提取对应节点
+        Node* operator[](size_t x) {
+            if(x >= theSize) {
+                throw std::overflow_error("超出列表范围！");
+            }
+            Node* re = begin();
+            for(;x != 0; --x) {
+                re = re->next;
+            }
+            return re;
+        }
+
+        // 交换当前节点的后两位
+        void swap_after(Node* prev) {
+            if(prev == nullptr || prev->next == nullptr || prev->next->next == nullptr) {
+                throw std::invalid_argument("选中节点及后续两个节点不能为空");
+            }
+            Node* A = prev->next;
+            Node* B = A->next;
+            Node* C = B->next;
+
+            prev->next = B;
+            B->next = A;
+            A->next = C;
+        }
+        // 提供交换头两个节点的函数
+        void swap_first_two() {
+            swap_after(head);  // head 是哨兵节点
         }
     
     public:
@@ -37,6 +69,12 @@ class SList {
             while(erase_after(head)) {}
             delete head;
         }
+
+        // 暂且禁用拷贝和移动，以后再加入
+        SList(const SList&) = delete;
+        SList& operator=(const SList&) = delete;
+        SList(SList&&) = delete;
+        SList& operator=(SList&&) = delete;
 
         void insert_after(Node* node, int x) {
             node->next = new Node{x, node->next};
@@ -51,7 +89,7 @@ class SList {
             if(node != nullptr && node->next != nullptr) {
                 Node* toDelete = node->next;
                 node->next = toDelete->next;
-                delete toDelete;
+                delete toDelete; // 释放toDelete指向的那个地址的内存
                 --theSize;
                 return true;
             }
@@ -76,48 +114,16 @@ class SList {
                 std::cout << p->data << std::endl;
                 p = p->next;
             }
+            std::cout << "\n";
+        }
+
+        // 交换i和i+1节点（用索引习惯）；这里优化了接口，保证交换操作的统一性和安全性
+        void swap_neighbor(size_t i) {
+            if(i == 0) {
+                swap_first_two();
+            }else {
+            swap_after((*this)[i-1]);
+            }
         }
 };
 // 哨兵节点在插入和删除数字时让头尾跟内部等价起来，可以共用一套指令。
-
-// 测试用
-int main() {
-    SList lst;
-
-    // 1. 空链表 print
-    std::cout << "=== 空链表 ===" << std::endl;
-    lst.print();
-
-    // 2. push_front
-    std::cout << "=== push_front 30, 20, 10 ===" << std::endl;
-    lst.push_front(10);
-    lst.push_front(20);
-    lst.push_front(30);
-    lst.print();
-
-    // 3. pop_front
-    std::cout << "=== pop_front ===" << std::endl;
-    lst.pop_front();
-    lst.print();
-
-    // 4. pop_front 清空
-    std::cout << "=== pop_front x2 ===" << std::endl;
-    lst.pop_front();
-    lst.pop_front();
-    lst.print();
-
-    // 5. 空链表 pop_front（不应崩溃）
-    std::cout << "=== 空链表 pop_front ===" << std::endl;
-    lst.pop_front();
-    lst.print();
-
-    // 6. insert_after
-    std::cout << "=== insert_after 测试 ===" << std::endl;
-    lst.push_front(50);
-    lst.push_front(10);
-    lst.insert_after(lst.begin(), 25);  // 在 10 后插入 25
-    lst.print();
-
-    std::cout << "=== 析构测试通过 ===" << std::endl;
-    return 0;
-}
