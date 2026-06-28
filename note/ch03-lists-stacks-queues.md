@@ -527,3 +527,82 @@ void push(const T& x) {
 修复方向（非必须，认知即可）：
 - `reserve` 预分配确保不抛
 - 或先算值、用 scope guard 回滚
+
+---
+
+## 习题 3.2: 只改链接交换相邻节点
+
+### 题目
+交换链表中相邻两个元素，只调整链接（不改 data 字段）。
+
+### 实现
+- **SList（单链表）**：`swap_after(prev)` 交换 `prev->next` 和 `prev->next->next`。哨兵节点使 `swap_first_two()` = `swap_after(head)`，与中间交换统一。
+- **DList（双链表）**：双向遍历优化——`i < theSize/2` 从头走，否则从尾走。6 指针更新。
+
+### 收获
+- 单链表交换相邻节点只需操作前驱——`prev→A→B→C` 变为 `prev→B→A→C`，三步指针重连。
+- DList 6 指针更新涉及 `a_prev`, `b_next` 两个"邻居锚点" + 两个节点的内部连接。
+- 双向遍历优化：从尾走时定位到第 `i+1` 个节点，`b = a->prev` 获取第 `i` 个，保持 if/else 分支后 a/b 角色统一。
+
+---
+
+## 习题 3.20: 惰性删除列表
+
+### 题目
+实现惰性删除：删除操作只标记节点 `in_list = false`，不物理移除；当已删节点数达到阈值时批量清除。
+
+### 设计
+- **哨兵双链表**：`head`/`tail` 哨兵 `in_list = false`，永不参与数据操作。
+- **双重计数**：`the_size`（活节点数）、`deleted_size`（标记删除数）。
+- **阈值触发**：`the_size == deleted_size` 时自动调用 `release()` 物理清除。
+- **Rule of Five**：拷贝/移动构造+赋值+析构全部实现。
+
+### 遍历中前进与跳过的顺序（关键 bug）
+
+**错误模式**（先跳过后前进）：
+```cpp
+for(size_t j = 0; j < i; ++j) {
+    while(!curr->in_list) curr = curr->next;  // 跳过已删
+    curr = curr->next;                         // 前进
+}
+```
+问题：最后一步前进后不检查 `in_list`，`delete_node(curr)` 可能落在一个已标记删除的节点上——重复删除 → 计数错乱。
+
+**正确模式**（先前进后跳过）：
+```cpp
+for(size_t j = 0; j < i; ++j) {
+    curr = curr->next;                    // 先前进
+    while(!curr->in_list) curr = curr->next;  // 再跳过已删
+}
+```
+保证每次迭代结束 `curr` 一定指向活节点。
+
+### 移动语义与析构安全
+
+**被移走对象的析构**：移动构造/赋值后 `other.head = other.tail = nullptr`。析构函数 `clear()` 中 `head->next` 对 nullptr 解引用 → SEGV。
+
+**修复**：`clear()` 中加 `if(head)` guard，移空对象 safe to destroy：
+```cpp
+void clear() {
+    if(head) {
+        Node* curr = head->next;
+        // ...
+    }
+}
+// 析构函数中 delete nullptr 合法
+```
+
+### 拷贝构造的计数错误
+
+**错误做法**：初始 `the_size{other.the_size}`，然后 `push_back` 每轮 `++the_size` → 最终 `the_size = 原值 + 总节点数`。
+
+**正确做法**：初始化为 0（`init()`），节点逐个 push_back 并复制 `in_list` 标记，最后直接赋值：
+```cpp
+the_size = other.the_size;
+deleted_size = other.deleted_size;
+```
+覆盖掉 push_back 累积的中间值。
+
+### 审查教训
+- 模板类中未实例化的成员函数不会触发编译错误——`other.tial` 拼写错误直到移动赋值被调用才暴露。
+- ASan 是最后防线，但逻辑错误（计数错乱、删错节点）不会触发——需要构造特定测试场景（惰性删除 + 再次 delete_the 跨过已删节点）。

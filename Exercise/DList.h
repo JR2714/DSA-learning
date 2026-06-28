@@ -12,7 +12,7 @@ class DList {
             Node* next;
             Node* prev;
 
-            Node(const T& init_data = T{}, Node* init_n = nullptr, Node* init_p = nullptr)
+            Node(const T& init_data = T{ }, Node* init_n = nullptr, Node* init_p = nullptr)
             :data{init_data}
             ,next{init_n}
             ,prev{init_p} {}
@@ -38,7 +38,7 @@ class DList {
         }
 
         // 擦除给定节点后的一个节点
-        bool erase1_after(Node* node) {
+        bool erase_after(Node* node) {
             if(node != nullptr && node->next != nullptr && node->next != tail) {
                 Node* to_delete = node->next;
                 node->next = to_delete->next;
@@ -107,7 +107,7 @@ class DList {
 
         // 析构函数
         ~DList() {
-            while(erase1_after(head)) {}; // 这里在释放中间的数据节点内存
+            while(erase_after(head)) {}; // 这里在释放中间的数据节点内存
             delete head;
             delete tail;
         }
@@ -145,7 +145,7 @@ class DList {
         DList& operator=(DList&& other) noexcept {
             if(this == &other) {return *this;}
 
-            while (erase1_after(head)) {}
+            while (erase_after(head)) {}
             delete head;
             delete tail;
 
@@ -161,13 +161,21 @@ class DList {
         // 交换当前节点与下一个节点
         void swap_neighbor(size_t i) {
             if(i + 1 >= theSize) {
-                throw std::overflow_error("交换索引越界");
+                throw std::out_of_range("交换索引越界");
             }
 
             Node* a = head->next;
-            for(size_t j = 0; j < i; ++j) {
-                a = a->next;
+            if(i < theSize / 2) {
+                for(size_t j = 0; j < i; ++j) {
+                    a = a->next;
+                }
+            } else {
+                a = tail->prev;
+                for(size_t j = theSize - 1; j > i; --j) {
+                    a = a->prev;
+                }
             }
+
             Node* b = a->next; // 现在需要交换a 和 b（由于题目不允许直接交换data，这里对指针操作）
 
             Node* a_prev = a->prev;

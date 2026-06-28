@@ -10,7 +10,7 @@ class SList {
             int data;
             Node *next;
 
-            Node(const int& d = int{}, Node *n = nullptr)
+            Node(const int& d = int{ }, Node *n = nullptr)
             : data{d}
             , next{n}
             {}
@@ -33,13 +33,13 @@ class SList {
         // 提供[]运算提取对应节点
         Node* operator[](size_t x) {
             if(x >= theSize) {
-                throw std::overflow_error("超出列表范围！");
+                throw std::out_of_range("超出列表范围！");
             }
-            Node* re = begin();
+            Node* cur = begin();
             for(;x != 0; --x) {
-                re = re->next;
+                cur = cur->next;
             }
-            return re;
+            return cur;
         }
 
         // 交换当前节点的后两位
@@ -111,7 +111,7 @@ class SList {
         void print() const {
             Node* p = head->next;
             while(p != nullptr) {
-                std::cout << p->data << std::endl;
+                std::cout << p->data << "\n";
                 p = p->next;
             }
             std::cout << "\n";
