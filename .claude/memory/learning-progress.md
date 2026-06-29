@@ -125,6 +125,8 @@ Started: 2026-06-14
   - 练习文件：`Exercise/ex_3_25a.cpp`
 - [x] **3.2 只改链接交换相邻节点** (2026-06-25) — 单链表 + 双链表双实现
 - [x] **3.20 惰性删除** (2026-06-28~29) — 哨兵双链表 + `in_list` 标记 + `release()` 半数阈值清除
-- [ ] 3.28 双端队列（Deque）
+- [x] **3.28 双端队列（Deque）** (2026-06-30) — 循环数组双端队列，push/pop/inject/eject 四方向 O(1)
+  - Bug 复盘：`reserve` 中 `% size_` 应为 `% capacity_`、拷贝构造循环 `i` 忘递增、移动赋值忘重置 `other` 状态
+  - 练习文件：`Exercise/deque.h`, `Exercise/ex_3_28.cpp`
 
 **Next: Ch.3 剩余习题 / Weiss Ch.4 Trees**
