@@ -1,7 +1,9 @@
 # C++ 基础回顾笔记
 
 > 教材：Mark Allen Weiss, *Data Structures and Algorithm Analysis in C++* (4th Edition)  
-> 参考：cppreference.com | 《C++ Primer (5th)》| Effective Modern C++
+> 参考：cppreference.com | 《C++ Primer (5th)》| Effective Modern C++   
+> 整理：Deepseek-v4-pro
+
 
 ---
 

@@ -1,5 +1,7 @@
 # Phase 2 笔记：表、栈、队列 (Weiss Ch.3)
 
+> 整理：Deepseek-v4-pro
+
 ## L1: ADT 概念 + List ADT (§3.1–3.3)
 
 ### ADT（抽象数据类型）

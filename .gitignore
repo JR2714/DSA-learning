@@ -1,7 +1,15 @@
-# 编译产物
 *.out
 *.exe
 *.o
+
 bin/
+
 Weiss_code/
-.vscode/
+
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+
+quick_ana/
+
+.claude/
