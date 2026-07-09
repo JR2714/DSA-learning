@@ -2,7 +2,7 @@
 
 > 教材：Mark Allen Weiss, *Data Structures and Algorithm Analysis in C++* (4th Edition)  
 > 参考：cppreference.com | 《C++ Primer (5th)》| Effective Modern C++   
-> 整理：Deepseek-v4-pro
+> 整理：刘坤（AI 辅助笔记框架，内容经本人审阅补充）
 
 
 ---

@@ -3,9 +3,10 @@
 #ifndef BINARY_SEARCH_TREE_H
 #define BINARY_SEARCH_TREE_H
 
-#include "../Weiss_code/dsexceptions.h"
+#include "dsexceptions.h"
 #include <algorithm>
-using namespace std;       
+#include <iostream>
+#include <utility>
 
 // BinarySearchTree class
 //
@@ -117,10 +118,10 @@ class BinarySearchTree
     /**
      * Print the tree contents in sorted order.
      */
-    void printTree( ostream & out = cout ) const
+    void printTree( std::ostream & out = std::cout ) const
     {
         if( isEmpty( ) )
-            out << "Empty tree" << endl;
+            out << "Empty tree" << std::endl;
         else
             printTree( root, out );
     }
@@ -313,12 +314,12 @@ class BinarySearchTree
     /**
      * Internal method to print a subtree rooted at t in sorted order.
      */
-    void printTree( BinaryNode *t, ostream & out ) const
+    void printTree( BinaryNode *t, std::ostream & out ) const
     {
         if( t != nullptr )
         {
             printTree( t->left, out );
-            out << t->element << endl;
+            out << t->element << std::endl;
             printTree( t->right, out );
         }
     }

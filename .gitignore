@@ -12,4 +12,6 @@ Weiss_code/
 
 quick_ana/
 
+*.text
+
 .claude/

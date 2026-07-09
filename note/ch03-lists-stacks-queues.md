@@ -1,6 +1,6 @@
 # Phase 2 笔记：表、栈、队列 (Weiss Ch.3)
 
-> 整理：Deepseek-v4-pro
+> 整理：刘坤（AI 辅助）
 
 ## L1: ADT 概念 + List ADT (§3.1–3.3)
 
