@@ -1,5 +1,7 @@
 # 第二课思考题
 
+> 递归 Fibonacci 分析：[L1 习题](../Chap2_AlgorithmAnalysis/L1_taste.md) | 算法分析笔记：[Ch.2 笔记](../note/ch02-algorithm-analysis.md#l2-最大子序列和--对数时间243245)
+
 ## 3(a). 当使用Euclid算法计算gcd(M, N)时，其中M，N为Fibonacci数列相邻的两项，试求迭代步数。
 
 由于Euclid算法即辗转相除法，并且Fibonacci由其构造很容易知道为严格递增列，为了方便，记$M=f_n$，$N=f_{n-1}$，其中$n\geq 1$，${f_n}(n\geq 0)$为Fibonacci数列。算法的每一步都对应了Fibonacci数列构造中的一次迭代。因此对于Fibonacci数列中的$M,N$，需要迭代$n-1$次。

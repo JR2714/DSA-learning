@@ -1,5 +1,7 @@
 # Ch.3 推荐习题
 
+> 习题详析：[Ch.3 笔记](../note/ch03-lists-stacks-queues.md)（含 3.1/3.4/3.24/3.25a/3.2/3.20/3.28 全部写写）| BST 惰性删除对比：[BST 惰性删除分析](../Chap4_Trees/why_lazy_del_suitable_for_bst.md)
+
 > 已完成的跳过：3.6（Josephus—队列版）、3.21（平衡符号）、3.22（后缀求值）、3.23a（中缀转后缀）、3.33（循环数组队列）
 
 ## 必做（4 题）

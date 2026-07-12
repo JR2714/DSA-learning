@@ -1,5 +1,7 @@
 # Ch.4 Trees — 笔记
 
+> 练习文件：[BST 绘图](../Chap4_Trees/binary_search_tree.md) | [BST 惰性删除](../Chap4_Trees/why_lazy_del_suitable_for_bst.md) | [AVL 高度证明](../Chap4_Trees/biggest_height_of_avl.md) | [AVL 实现](../Chap4_Trees/avl_tree.h)
+
 > 整理：刘坤（AI 辅助）
 
 ## L1: 树的初步与二叉搜索树（§4.1–4.3, pp.121–142）
@@ -115,6 +117,133 @@ class BinarySearchTree { ... };
 
 ### 5. 练习
 
-- **4.1** BST 插入 `{5,3,7,2,4,6,9,1,8}` 并删除 5 的绘图 → `Chap4_Trees/binary_search_tree.md`
+- **4.1** BST 插入 `{5,3,7,2,4,6,9,1,8}` 并删除 5 的绘图 → [BST 绘图](../Chap4_Trees/binary_search_tree.md)
 - **4.2** `countLeaves()` 递归 + 迭代（栈模拟）两种实现，O(N) 时间，O(H) 空间 → `Chap4_Trees/binary_search_tree_with_count_leaves.h`
-- **4.3** BST 惰性删除分析 → `Chap4_Trees/why_lazy_del_suitable_for_bst.md`
+- **4.3** BST 惰性删除分析 → [BST 惰性删除分析](../Chap4_Trees/why_lazy_del_suitable_for_bst.md)
+
+## L2. AVL 树（§4.4, pp.144–158）
+
+### 1. 为什么需要平衡
+
+BST 平均 O(log N)，但有序输入退化为链表 → O(N)。AVL 树用**平衡条件**强制树高为 O(log N)。
+
+### 2. 平衡条件
+
+> 对每个节点，|height(left) − height(right)| ≤ 1，空树高度 = −1。
+
+高度上界：约 **1.44 log(N+2) − 1.328**，证明见下。
+
+### 3. 高度上界的证明思路
+
+最小节点数 S(h) 递推：**S(h) = S(h−1) + S(h−2) + 1**，其中 S(0)=1, S(1)=2。
+
+令 T(h+3) = S(h)+1，消去 +1 项得 T(h) = T(h−1) + T(h−2)，这正是 Fibonacci 递推。用 Binet 公式解出 S(h) ≈ φ^(h+3)/√5 − 1，反解 h 即得 1.44 log(N+2) − 1.328。
+
+> 详细推导：`Chap4_Trees/biggest_height_of_avl.md`
+
+### 4. 插入导致的不平衡：四类场景
+
+沿插入路径向上回溯，第一个违反平衡条件的节点记作 **α**（最深的不平衡节点）：
+
+| 案例 | 插入位置 | 修复 |
+|------|----------|------|
+| Case 1 (LL) | α 的左孩子的左子树 | **单旋转** `rotateWithLeftChild` |
+| Case 2 (LR) | α 的左孩子的右子树 | **双旋转** `doubleWithLeftChild` |
+| Case 3 (RL) | α 的右孩子的左子树 | **双旋转** `doubleWithRightChild` |
+| Case 4 (RR) | α 的右孩子的右子树 | **单旋转** `rotateWithRightChild` |
+
+1/4 对称（外侧 → 单旋），2/3 对称（内侧 → 双旋）。
+
+### 5. 单旋转（Case 1: 左-左）
+
+```
+     k2 (α)               k1
+    /   \                 /  \
+   k1    Z     →        X    k2
+  /  \                      /  \
+ X    Y                    Y    Z
+```
+
+- k1 成为新根，k2 降为 k1 的右孩子
+- Y（k1 右子树）移到 k2 左子树——Y 中所有值在 k1 和 k2 之间，BST 性质保证合法
+- **旋转后子树高度 = 插入前高度** → 不需要继续向上调整！一次旋转即可
+
+### 6. 双旋转（Case 2: 左-右）
+
+单旋转对内侧插入无效——Y 太深，单旋转只是把它从一侧挪到另一侧。需要**两次单旋转**：
+
+```
+      k3 (α)               k3                   k2
+     /    \               /   \                /   \
+   k1      D     →      k2     D     →       k1     k3
+  /  \                 /  \                 /  \   /  \
+ A   k2               k1   C               A   B  C   D
+    /  \             /  \
+   B    C           A    B
+  (先右旋 k1)           (再左旋 k3)
+```
+
+代码只有两行：
+```cpp
+void doubleWithLeftChild(AvlNode *& k3) {
+    rotateWithRightChild(k3->left);  // 先转孩子
+    rotateWithLeftChild(k3);         // 再转自己
+}
+```
+
+### 7. 核心实现
+
+**节点结构**：`data + left + right + height`。存高度（而非平衡因子），空节点高度 = −1。
+
+**高度辅助函数**：
+```cpp
+int height(AvlNode *t) const {
+    return t == nullptr ? -1 : t->height;
+}
+```
+
+**balance() 核心逻辑**：
+```cpp
+void balance(AvlNode *& t) {
+    if (t == nullptr) return;
+    if (height(t->left) - height(t->right) > 1) {
+        // 左子树过高 → 判断内外侧
+        if (height(t->left->left) >= height(t->left->right))
+            rotateWithLeftChild(t);     // LL → 单旋
+        else
+            doubleWithLeftChild(t);     // LR → 双旋
+    } else if (height(t->right) - height(t->left) > 1) {
+        // 右子树过高 → 对称判断
+        if (height(t->right->right) >= height(t->right->left))
+            rotateWithRightChild(t);    // RR → 单旋
+        else
+            doubleWithRightChild(t);    // RL → 双旋
+    }
+    t->height = max(height(t->left), height(t->right)) + 1;
+}
+```
+
+判断内外侧的技巧：比较**孙子树高度**。`height(left->left) >= height(left->right)` → 外侧（LL）→ 单旋；否则内侧（LR）→ 双旋。
+
+**指针引用 `*&`**：旋转函数通过引用参数直接改写父节点中的指针，递归实现因此非常简洁。
+
+### 8. 删除
+
+BST 删除的最后一步调用 `balance()`。与插入的区别：
+- 插入判断用 `>`：`height(left->left) > height(left->right)` → 单旋
+- 删除判断用 `>=`：`height(left->left) >= height(left->right)` → 单旋
+
+等号是因为删除场景中 Y 可能和 X 一样深（插入时不可能），此时单旋仍能修复。
+
+### 9. 踩过的坑
+
+- **`FindMin` 条件反转**：写成 `if(!node) while(!node->left)`，导致找最小值失败，删除双孩子节点时破坏 BST 性质
+- **`Contain` 缺 `return`**：递归调用 `Contain(x, node->left)` 忘记写 `return`，结果是未定义行为
+- **`operator=` 自赋值缺 `return`**：`if(this != &other)` 分支外无 `return *this`
+- **`const` 缺失**：私有 `Contain` 没加 `const`，公有 `const` 版调用时会编译失败（模板惰性实例化掩盖了此问题）
+
+### 10. 练习
+
+- **练习文件**：`Chap4_Trees/avl_tree.h`（完整实现，含插入/删除/旋转/拷贝/移动）
+- **测试文件**：`Chap4_Trees/test_avl_tree.cpp`
+- **高度证明**：`Chap4_Trees/biggest_height_of_avl.md`

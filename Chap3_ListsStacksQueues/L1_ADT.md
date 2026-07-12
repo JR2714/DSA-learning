@@ -1,5 +1,7 @@
 # ADT非编程习题
 
+> 详见 [Ch.3 L1 笔记](../../note/ch03-lists-stacks-queues.md#l1-adt-概念--list-adt-3133)
+
 ## 1. 分析题
 
 |操作|vector|list|

@@ -1,5 +1,7 @@
 # Phase 1 笔记：算法分析 (Weiss Ch.2)
 
+> 习题：[L1 习题](../Chap2_AlgorithmAnalysis/L1_taste.md) | [L2 思考题](../Chap2_AlgorithmAnalysis/L2_thinking.md) | [推荐习题清单](../Exercise/chap1-2ex.md)
+
 > 整理：刘坤（AI 辅助）
 
 ## L1: 算法分析基础 (§2.1–2.3 + §2.4.1-2.4.2)

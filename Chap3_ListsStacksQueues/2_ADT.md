@@ -1,5 +1,7 @@
 # 第二节思考题
 
+> 详见 [Ch.3 L2 笔记](../../note/ch03-lists-stacks-queues.md#l2-vector-与-list-的底层实现-3435)
+
 ## Weiss 的 Vector::reserve 在 newCapacity < theSize 时直接 return，不允许缩小容量。如果我们要支持 shrink_to_fit（将 capacity 缩小到恰好等于 size），这个操作的时间复杂度是多少？它和 push_back的扩容合在一起看，是否存在某种操作序列会导致每次操作都是 O(N)？（提示：思考反复 shrink + grow 的场景）
 
 ```cpp

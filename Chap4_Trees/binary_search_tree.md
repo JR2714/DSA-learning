@@ -1,3 +1,5 @@
+> BST 概念与操作详解：[Ch.4 L1 笔记](../note/ch04-trees.md#l1-树的初步与二叉搜索树4143-pp121142)
+
 ## 插入
 ```mermaid
 graph TD

@@ -1,5 +1,7 @@
 # Phase 2 笔记：表、栈、队列 (Weiss Ch.3)
 
+> 思考题：[L1 ADT 分析](../Chap3_ListsStacksQueues/L1_ADT.md) | [L2 均摊分析](../Chap3_ListsStacksQueues/2_ADT.md) | [L3 中缀转后缀](../Chap3_ListsStacksQueues/3_infixToPostfix.md) | [L4 队列方案B](../Chap3_ListsStacksQueues/4_queueWithoutCurrenSize.md) | [推荐习题清单](../Exercise/chap3ex.md)
+
 > 整理：刘坤（AI 辅助）
 
 ## L1: ADT 概念 + List ADT (§3.1–3.3)

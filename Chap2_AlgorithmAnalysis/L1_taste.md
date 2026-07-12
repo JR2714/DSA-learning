@@ -1,5 +1,7 @@
 # **Chap 2. 算法分析第一节习题**
 
+> 第二节思考题（Euclid GCD / 快速幂）：[L2 习题](L2_thinking.md) | 算法分析笔记：[Ch.2 笔记](../note/ch02-algorithm-analysis.md)
+
 ## **1. 给出算法的Big-Oh时间复杂度**
 
 ### [**(a)**](#que-a)
@@ -53,13 +55,13 @@ for (int i = 1; i <= n; i *= 2)
 
 设第$n$项需要调用函数$f_n$次，则：
 
-\[
+$$
 f_n=f_{n-1}+f_{n-2}+1
-\]
+$$
 可化为类似Fibonacci数列的递推式：
-\[
+$$
 f_n+1=(f_{n-1}+1)+(f_{n-2}+1)
-\]
+$$
 对于
 
 ```cpp
@@ -74,13 +76,14 @@ long fib(int n)
 
 $f_0=f_1=1$，从而：
 
-\[
-(f_n+1)+\frac{\sqrt{5}-1}{2}(f_{n-1}+1)=2(\frac{\sqrt{5}+1}{2})^n
-\]
-
-\[
-f_{n+1}=\frac{\sqrt{5}-3}{2^{n-1}}\sum_{k=0}^{n-1}\left[(\sqrt{5}+1)^k(1-\sqrt{5})^{n-1-k}\right]+2(\frac{\sqrt{5}+1}{2})^n-1.
-\]
+令 $f_n+1=b_{n+1}$，那么此时 $b_n/2$ 为一个Fibonacci数列，通项为：
+$$
+b_n=\frac{1}{\sqrt{5}}\left[\left(\frac{\sqrt{5}+1}{2}\right)^n-\left(\frac{1-\sqrt{5}}{2}\right)^n\right]
+$$
+那么 $f_n$ 通项：
+$$
+f_n=\frac{2}{\sqrt{5}}\left[\left(\frac{\sqrt{5}+1}{2}\right)^{n+1}-\left(\frac{1-\sqrt{5}}{2}\right)^{n+1}\right]-1
+$$
 
 代入即可算得$f_{40}$，时间复杂度$O((\frac{\sqrt{5}+1}{2})^N)$。
 
