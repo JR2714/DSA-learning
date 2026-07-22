@@ -354,3 +354,82 @@ BST 10M 记录 → ~32 次磁盘访问 ≈ 5 秒。目标：3-4 次。
 
 - **练习 1**：[`Chap4_Trees/find_in_splay.md`](../Chap4_Trees/find_in_splay.md) — Splay 手推，find(2) zig-zig + find(9) zig-zag+zig
 - **练习 2**：[`Chap4_Trees/why_the_rule_of_Btree.md`](../Chap4_Trees/why_the_rule_of_Btree.md) — B-树半满规则分析（退化风险 + 合并自洽性 + 根例外）
+
+---
+
+## L4: STL 中的 set 与 map（§4.8, pp.173–181）
+
+> 练习文件：[`use_set_to_sort_word.cpp`](../Chap4_Trees/use_set_to_sort_word.cpp) | [`use_map_to_count_word.cpp`](../Chap4_Trees/use_map_to_count_word.cpp)
+
+### 1. set：有序无重复集合（§4.8.1）
+
+**核心特性**：
+- 不允许重复，元素按排序顺序存储
+- 插入、删除、查找 **O(log N)** 最坏保证
+- 底层：平衡二叉搜索树（通常是红黑树，§12.2 深入讨论）
+
+**关键 API**：
+
+| 操作 | 签名 | 行为 |
+|------|------|------|
+| 插入 | `pair<iterator,bool> insert(x)` | 返回迭代器 + 成功标志 |
+| 带 hint 插入 | `insert(iterator hint, x)` | hint 准确时 O(1)，否则降级为普通插入 |
+| 查找 | `find(x)` | 返回迭代器，找不到返回 `end()` |
+| 删除 | `erase(x)` / `erase(itr)` | 返回值 / 返回后继迭代器 |
+
+**迭代器**：支持 `begin()` → `end()` 按排序顺序遍历（中序遍历）。
+
+**自定义排序**：默认 `less<Object>`（`operator<`），可传入自定义比较器：
+```cpp
+set<string, CaseInsensitiveCompare> s;  // 大小写不敏感
+```
+
+### 2. map：键值对集合（§4.8.2）
+
+**核心**：`map` = 以 `pair<const Key, Value>` 为元素的 `set`，按 key 排序。
+
+**`operator[]` 是双刃剑**：
+- `map[key]` — key 存在则返回 value 引用，**不存在则插入 key + 默认 value**
+- 简洁但可能意外修改 map（`const map` 上不可用）
+- 安全只读访问用 `find`：
+  ```cpp
+  auto itr = m.find(key);
+  if (itr != m.end()) { /* itr->second */ }
+  ```
+
+**插入**：需要 `pair` 对象：
+```cpp
+m.insert({"key", value});  // 或 pair<string,int>("key", value)
+```
+
+**遍历**：`for (const auto& entry : m)` — `entry.first` 是 key，`entry.second` 是 value。
+
+### 3. 底层实现（§4.8.3）
+
+`set`/`map` 要求 insert/erase/find **O(log N) 最坏时间** → 底层是平衡 BST（红黑树）。
+
+迭代器前进（`++`）的实现方案：
+1. 拷贝全部元素到数组 — 不兼容 `erase`/`insert` 返回新迭代器
+2. 栈存储路径 — 迭代器大，代码笨重
+3. 节点存 parent 指针 — 额外空间
+4. 节点存 next/prev 额外链接 — 空间换时间
+5. **线索树（threaded tree）**：空指针复用为前驱/后继链接 — 很多 STL 实现采用
+
+### 4. 单词变换问题（§4.8.4）
+
+在 ~89,000 单词中找能通过一个字符替换变成 ≥15 个其他单词的词。三种算法：
+
+| 算法 | 技术 | 时间 |
+|------|------|------|
+| 暴力 O(N²) | 逐对比较 | 97 秒 |
+| 按长度分组 | `map<int,vector<string>>` 按长度归类 | 18 秒 |
+| Representative | 挖掉一个字符，同代表=相差一字符 | 2 秒 |
+
+核心技巧（第三种）：对每个单词的每个位置，挖掉该字符形成"代表"，代表相同的单词构成团（全连通）。用 `map<string,vector<string>> repsToWords` 归类。
+
+### 5. 常见错误
+
+- **`for (auto x : set/map)`**：每次迭代拷贝元素（string → 堆分配），应为 `const auto&`
+- **`map::operator[]` 意外插入**：查找存在性时用 `find` 而非 `[]`
+- **变量命名误导**：遍历 map 的元素是 `pair`，不是 `iterator`，不要命名成 `it` 或 `itr`
+- **`find` 不检查返回值**：直接解引用 → 未定义行为
