@@ -9,7 +9,8 @@
 | 0 | Ch.1 | C++ 复习（指针/引用/动态内存/类/模板/STL） | 完成 |
 | 1 | Ch.2 | 算法分析（Big-Oh / 最大子序列和 / 二分查找 / 快速幂） | 完成 |
 | 2 | Ch.3 | 表、栈、队列（ADT / vector & list 实现 / 栈应用 / 循环队列） | 完成 |
-| 3 | Ch.4 | 树（BST / AVL / Splay 树 / B-Tree） | 进行中 |
+| 3 | Ch.4 | 树（BST / AVL / Splay 树 / B-Tree） | 完成 |
+| 4 | Ch.5 | 散列（哈希函数 / 冲突解决 / 开放地址法 / 再散列） | 进行中 |
 
 详见 [DSAplan.md](DSAplan.md)。
 
@@ -20,7 +21,9 @@ C++_Basic/                  # Phase 0 — C++ 基础复习
 Chap2_AlgorithmAnalysis/    # Phase 1 — 算法分析练习
 Chap3_ListsStacksQueues/    # Phase 2 — 表、栈、队列练习
 Chap4_Trees/                # Phase 3 — 树练习
+Chap5_Hashing/              # Phase 4 — 散列练习
 Exercise/                   # Ch.1–3 选做习题
+LeetCode/                   # LeetCode 练习（可编译运行的完整程序）
 note/                       # 自动总结的章节学习记录
 Weiss_code/                 # Weiss 官方源码（仅本地参考）
 bin/                        # 编译产物（gitignored）
@@ -34,8 +37,6 @@ bin/                        # 编译产物（gitignored）
 - **笔记整理**：部分章节笔记由 AI 辅助将零散的学习记录整理为结构化文档，内容经本人核实补充
 - **少量测试框架**：个别测试代码的框架由 AI 生成初版，测试逻辑和验证用例由本人设计审查
 
-所有核心代码实现、习题解答、算法分析均由本人独立完成。AI 在此的角色是效率工具而非思考替代——每一行代码都经过我的理解和验证。
 
 - **教材**：Mark Allen Weiss, *Data Structures and Algorithm Analysis in C++*, 4th Edition
 - **官方源码**：[users.cs.fiu.edu/~weiss/](https://users.cs.fiu.edu/~weiss/)
-- **学习计划**：[DSAplan.md](DSAplan.md)
