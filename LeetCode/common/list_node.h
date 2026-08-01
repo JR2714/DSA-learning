@@ -22,6 +22,20 @@ inline ListNode* buildList(const std::vector<int>& vals) {
     return dummy.next;
 }
 
+// 构建带环链表：pos 为环入口下标（0 起），pos = -1 表示无环
+inline ListNode* buildCycleList(const std::vector<int>& vals, int pos) {
+    ListNode* head = buildList(vals);
+    if (pos < 0 || head == nullptr) return head;
+
+    ListNode* entry = head;
+    for (int i = 0; i < pos; ++i) entry = entry->next;
+
+    ListNode* tail = head;
+    while (tail->next) tail = tail->next;
+    tail->next = entry;
+    return head;
+}
+
 // 打印链表
 inline void printList(ListNode* head) {
     ListNode* p = head;
