@@ -11,6 +11,7 @@
 | 2 | Ch.3 | 表、栈、队列（ADT / vector & list 实现 / 栈应用 / 循环队列） | 完成 |
 | 3 | Ch.4 | 树（BST / AVL / Splay 树 / B-Tree） | 完成 |
 | 4 | Ch.5 | 散列（哈希函数 / 冲突解决 / 开放地址法 / 再散列） | 进行中 |
+| — | LeetCode | 链表专项（206 / 141 / 142 / 21） | 进行中 |
 
 详见 [DSAplan.md](DSAplan.md)。
 
