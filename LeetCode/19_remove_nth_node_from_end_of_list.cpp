@@ -1,16 +1,21 @@
 #include "common/list_node.h"
 #include <vector>
+#include <iostream>
 
 class Solution {
 public:
     ListNode* removeNthFromEnd(ListNode* head, int n) {
+        // pioneer 先走 n 步,之后两者同步,pioneer 到底时 follower 恰在待删节点前驱
         ListNode dummy;
         ListNode* pioneer = head;
         ListNode* follower = &dummy;
         follower->next = head;
 
         for(int cur = 0; cur < n; ++cur) {
-            if(!pioneer) return nullptr;
+            if(!pioneer) {
+                std::cout << "要删除的位置不在列表中, 未对链表做出更改. \n";
+                return head;
+            }
             pioneer = pioneer->next;
         }
 
@@ -20,7 +25,7 @@ public:
         }
 
         ListNode* to_be_deleted = follower->next;
-        follower->next = to_be_deleted ? to_be_deleted->next : nullptr;
+        follower->next = to_be_deleted->next;
 
         delete to_be_deleted;
         return dummy.next;
